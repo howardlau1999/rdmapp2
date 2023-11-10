@@ -10,9 +10,6 @@ if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RelWithDebInfo)
 endif ()
 
-string(LENGTH "${CMAKE_SOURCE_DIR}/" SOURCE_PATH_LENGTH)
-add_definitions("-DSOURCE_PATH_LENGTH=${SOURCE_PATH_LENGTH}")
-
 option(RDMAPP_BUILD_DOCS "Build docs" OFF)
 option(RDMAPP_ASAN "Build with AddressSanitizer" OFF)
 

@@ -4,6 +4,7 @@
 #include <coroutine>
 #include <cstdint>
 #include <exception>
+#include <functional>
 #include <iterator>
 #include <memory>
 #include <optional>
@@ -47,6 +48,7 @@ struct deserialized_qp {
  *
  */
 class qp : public noncopyable {
+  using callback_ptr = std::function<void(struct ibv_wc const &)> *;
   static std::atomic<uint32_t> next_sq_psn;
   struct ibv_qp *qp_;
   struct ibv_srq *raw_srq_;
