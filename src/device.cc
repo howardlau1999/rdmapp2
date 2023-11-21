@@ -10,7 +10,6 @@
 
 #include "rdmapp/error.h"
 
-
 namespace rdmapp {
 
 device_list::device_list() : devices_(nullptr), nr_devices_(0) {
@@ -130,9 +129,8 @@ device::~device() {
   }
 
   if (auto rc = ::ibv_close_device(ctx_); rc != 0) [[unlikely]] {
-    
+
   } else {
-    
   }
 }
 

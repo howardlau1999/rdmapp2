@@ -257,17 +257,17 @@ public:
   [[nodiscard]] send_awaitable write(remote_mr const &remote_mr, void *buffer,
                                      size_t length);
 
-
   /**
-   * @brief Raw write method. Make sure you register the buffer first and all parameters are valid.
-   * 
-   * @param remote_addr 
-   * @param remote_length 
-   * @param rkey 
-   * @param local_addr 
-   * @param local_length 
-   * @param lkey 
-   * @return send_awaitable 
+   * @brief Raw write method. Make sure you register the buffer first and all
+   * parameters are valid.
+   *
+   * @param remote_addr
+   * @param remote_length
+   * @param rkey
+   * @param local_addr
+   * @param local_length
+   * @param lkey
+   * @return send_awaitable
    */
   [[nodiscard]] send_awaitable write(void *remote_addr, size_t remote_length,
                                      uint32_t rkey, void *local_addr,
@@ -287,7 +287,6 @@ public:
   [[nodiscard]] send_awaitable write_with_imm(remote_mr const &remote_mr,
                                               void *buffer, size_t length,
                                               uint32_t imm);
-
 
   [[nodiscard]] send_awaitable write_with_imm(void *remote_addr,
                                               size_t remote_length,
@@ -330,8 +329,8 @@ public:
   [[nodiscard]] send_awaitable fetch_and_add(void *remote_addr,
                                              size_t remote_length,
                                              uint32_t rkey, void *local_addr,
-                                             size_t local_length,
-                                             uint32_t lkey, uint64_t add);
+                                             size_t local_length, uint32_t lkey,
+                                             uint64_t add);
 
   /**
    * @brief This method performs an atomic compare-and-swap operation on the
@@ -350,12 +349,10 @@ public:
                                                 uint64_t compare,
                                                 uint64_t swap);
 
-  [[nodiscard]] send_awaitable compare_and_swap(void *remote_addr,
-                                                size_t remote_length,
-                                                uint32_t rkey, void *local_addr,
-                                                size_t local_length,
-                                                uint32_t lkey, uint64_t compare,
-                                                uint64_t swap);
+  [[nodiscard]] send_awaitable
+  compare_and_swap(void *remote_addr, size_t remote_length, uint32_t rkey,
+                   void *local_addr, size_t local_length, uint32_t lkey,
+                   uint64_t compare, uint64_t swap);
 
   /**
    * @brief This method posts a recv request on the queue pair. The buffer will

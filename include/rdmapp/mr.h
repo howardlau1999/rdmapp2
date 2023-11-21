@@ -33,7 +33,7 @@ template <class Tag> class mr;
  */
 template <> class mr<tags::mr::local> : public noncopyable {
   struct ibv_mr *mr_;
-  pd* pd_;
+  pd *pd_;
 
 public:
   /**
@@ -42,7 +42,7 @@ public:
    * @param pd The protection domain to use.
    * @param mr The ibverbs memory region handle.
    */
-  mr(pd* pd, struct ibv_mr *mr);
+  mr(pd *pd, struct ibv_mr *mr);
 
   /**
    * @brief Move construct a new mr object

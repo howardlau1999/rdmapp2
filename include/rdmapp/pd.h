@@ -18,7 +18,7 @@ class qp;
  *
  */
 class pd : public noncopyable {
-  device* device_;
+  device *device_;
   struct ibv_pd *pd_;
   friend class qp;
   friend class srq;
@@ -29,14 +29,14 @@ public:
    *
    * @param device The device to use.
    */
-  pd(device* device);
+  pd(device *device);
 
   /**
    * @brief Get the device object pointer.
    *
    * @return std::shared_ptr<device> The device object pointer.
    */
-  device* device_ptr() const;
+  device *device_ptr() const;
 
   /**
    * @brief Register a local memory region.

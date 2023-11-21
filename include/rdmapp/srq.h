@@ -14,7 +14,7 @@ namespace rdmapp {
  */
 class srq {
   struct ibv_srq *srq_;
-  pd* pd_;
+  pd *pd_;
   friend class qp;
 
 public:
@@ -24,7 +24,7 @@ public:
    * @param pd The protection domain to use.
    * @param max_wr The maximum number of outstanding work requests.
    */
-  srq(pd* pd, size_t max_wr = 1024);
+  srq(pd *pd, size_t max_wr = 1024);
 
   /**
    * @brief Destroy the srq object and the associated shared receive queue.

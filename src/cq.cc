@@ -10,13 +10,11 @@
 
 #include "rdmapp/error.h"
 
-
 namespace rdmapp {
 
-cq::cq(device* device, size_t nr_cqe) : device_(device) {
+cq::cq(device *device, size_t nr_cqe) : device_(device) {
   cq_ = ::ibv_create_cq(device->ctx_, nr_cqe, this, nullptr, 0);
   check_ptr(cq_, "failed to create cq");
-  
 }
 
 bool cq::poll(struct ibv_wc &wc) {
@@ -40,9 +38,8 @@ cq::~cq() {
   }
 
   if (auto rc = ::ibv_destroy_cq(cq_); rc != 0) [[unlikely]] {
-    
+
   } else {
-    
   }
 }
 

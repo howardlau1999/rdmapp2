@@ -20,7 +20,7 @@ class qp;
  *
  */
 class cq : public noncopyable {
-  device* device_;
+  device *device_;
   struct ibv_cq *cq_;
   friend class qp;
 
@@ -31,7 +31,7 @@ public:
    * @param device The device to use.
    * @param num_cqe The number of completion entries to allocate.
    */
-  cq(device* device, size_t num_cqe = 128);
+  cq(device *device, size_t num_cqe = 128);
 
   /**
    * @brief Poll the completion queue.
