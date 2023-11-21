@@ -80,9 +80,13 @@ class qp : public noncopyable {
 public:
   class send_awaitable {
     qp *qp_;
-    local_mr *local_mr_;
+    void *local_addr_;
+    size_t local_length_;
+    uint32_t lkey_;
     std::exception_ptr exception_;
-    remote_mr remote_mr_;
+    void *remote_addr_;
+    size_t remote_length_;
+    uint32_t rkey_;
     uint64_t compare_add_;
     uint64_t swap_;
     uint32_t imm_;
@@ -99,6 +103,21 @@ public:
                    remote_mr const &remote_mr, uint64_t add);
     send_awaitable(qp *qp, local_mr *local_mr, enum ibv_wr_opcode opcode,
                    remote_mr const &remote_mr, uint64_t compare, uint64_t swap);
+    send_awaitable(qp *qp, void *local_addr, size_t local_length, uint32_t lkey,
+                   enum ibv_wr_opcode opcode);
+    send_awaitable(qp *qp, void *local_addr, size_t local_length, uint32_t lkey,
+                   enum ibv_wr_opcode opcode, void *remote_addr,
+                   size_t remote_length, uint32_t rkey);
+    send_awaitable(qp *qp, void *local_addr, size_t local_length, uint32_t lkey,
+                   enum ibv_wr_opcode opcode, void *remote_addr,
+                   size_t remote_length, uint32_t rkey, uint32_t imm);
+    send_awaitable(qp *qp, void *local_addr, size_t local_length, uint32_t lkey,
+                   enum ibv_wr_opcode opcode, void *remote_addr,
+                   size_t remote_length, uint32_t rkey, uint64_t add);
+    send_awaitable(qp *qp, void *local_addr, size_t local_length, uint32_t lkey,
+                   enum ibv_wr_opcode opcode, void *remote_addr,
+                   size_t remote_length, uint32_t rkey, uint64_t compare,
+                   uint64_t swap);
     bool await_ready() const noexcept;
     bool await_suspend(std::coroutine_handle<> h) noexcept;
     uint32_t await_resume() const;
@@ -108,13 +127,17 @@ public:
 
   class recv_awaitable {
     qp *qp_;
-    local_mr *local_mr_;
+    void *local_addr_;
+    size_t local_length_;
+    uint32_t lkey_;
     std::exception_ptr exception_;
     struct ibv_wc wc_;
     enum ibv_wr_opcode opcode_;
 
   public:
     recv_awaitable(qp *qp, local_mr *local_mr);
+    recv_awaitable(qp *qp, void *local_addr, size_t local_length,
+                   uint32_t lkey);
     bool await_ready() const noexcept;
     bool await_suspend(std::coroutine_handle<> h) noexcept;
     std::pair<uint32_t, std::optional<uint32_t>> await_resume() const;
@@ -210,6 +233,18 @@ public:
   [[nodiscard]] send_awaitable send(void *buffer, size_t length);
 
   /**
+   * @brief Raw send method. Make sure you register the buffer first and all
+   * parameters are valid.
+   *
+   * @param local_addr
+   * @param local_length
+   * @param lkey
+   * @return send_awaitable
+   */
+  [[nodiscard]] send_awaitable send(void *local_addr, size_t local_length,
+                                    uint32_t lkey);
+
+  /**
    * @brief This method writes local buffer to a remote memory region. The local
    * buffer will be registered as a memory region first and then deregistered
    * upon completion.
@@ -221,6 +256,22 @@ public:
    */
   [[nodiscard]] send_awaitable write(remote_mr const &remote_mr, void *buffer,
                                      size_t length);
+
+
+  /**
+   * @brief Raw write method. Make sure you register the buffer first and all parameters are valid.
+   * 
+   * @param remote_addr 
+   * @param remote_length 
+   * @param rkey 
+   * @param local_addr 
+   * @param local_length 
+   * @param lkey 
+   * @return send_awaitable 
+   */
+  [[nodiscard]] send_awaitable write(void *remote_addr, size_t remote_length,
+                                     uint32_t rkey, void *local_addr,
+                                     size_t local_length, uint32_t lkey);
 
   /**
    * @brief This method writes local buffer to a remote memory region with an
@@ -237,6 +288,13 @@ public:
                                               void *buffer, size_t length,
                                               uint32_t imm);
 
+
+  [[nodiscard]] send_awaitable write_with_imm(void *remote_addr,
+                                              size_t remote_length,
+                                              uint32_t rkey, void *local_addr,
+                                              size_t local_length,
+                                              uint32_t lkey, uint32_t imm);
+
   /**
    * @brief This method reads to local buffer from a remote memory region. The
    * local buffer will be registered as a memory region first and then
@@ -249,6 +307,10 @@ public:
    */
   [[nodiscard]] send_awaitable read(remote_mr const &remote_mr, void *buffer,
                                     size_t length);
+
+  [[nodiscard]] send_awaitable read(void *remote_addr, size_t remote_length,
+                                    uint32_t rkey, void *local_addr,
+                                    size_t local_length, uint32_t lkey);
 
   /**
    * @brief This method performs an atomic fetch-and-add operation on the
@@ -264,6 +326,12 @@ public:
   [[nodiscard]] send_awaitable fetch_and_add(remote_mr const &remote_mr,
                                              void *buffer, size_t length,
                                              uint64_t add);
+
+  [[nodiscard]] send_awaitable fetch_and_add(void *remote_addr,
+                                             size_t remote_length,
+                                             uint32_t rkey, void *local_addr,
+                                             size_t local_length,
+                                             uint32_t lkey, uint64_t add);
 
   /**
    * @brief This method performs an atomic compare-and-swap operation on the
@@ -282,6 +350,13 @@ public:
                                                 uint64_t compare,
                                                 uint64_t swap);
 
+  [[nodiscard]] send_awaitable compare_and_swap(void *remote_addr,
+                                                size_t remote_length,
+                                                uint32_t rkey, void *local_addr,
+                                                size_t local_length,
+                                                uint32_t lkey, uint64_t compare,
+                                                uint64_t swap);
+
   /**
    * @brief This method posts a recv request on the queue pair. The buffer will
    * be filled with data received. The local buffer will be registered as a
@@ -293,6 +368,8 @@ public:
    * data, and second indicating the immediate value if any.
    */
   [[nodiscard]] recv_awaitable recv(void *buffer, size_t length);
+
+  [[nodiscard]] recv_awaitable recv(void *buffer, size_t length, uint32_t lkey);
 
   /**
    * @brief This function sends a registered local memory region to remote.

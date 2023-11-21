@@ -53,10 +53,10 @@ uint32_t local_mr::lkey() const { return mr_->lkey; }
 remote_mr::mr(void *addr, uint32_t length, uint32_t rkey)
     : addr_(addr), length_(length), rkey_(rkey) {}
 
-void *remote_mr::addr() { return addr_; }
+void *remote_mr::addr() const { return addr_; }
 
-uint32_t remote_mr::length() { return length_; }
+uint32_t remote_mr::length() const { return length_; }
 
-uint32_t remote_mr::rkey() { return rkey_; }
+uint32_t remote_mr::rkey() const { return rkey_; }
 
 } // namespace rdmapp

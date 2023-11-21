@@ -141,21 +141,21 @@ public:
    *
    * @return void* The address of the remote memory region.
    */
-  void *addr();
+  void *addr() const;
 
   /**
    * @brief Get the length of the remote memory region.
    *
    * @return uint32_t The length of the remote memory region.
    */
-  uint32_t length();
+  uint32_t length() const;
 
   /**
    * @brief Get the remote key of the memory region.
    *
    * @return uint32_t The remote key of the memory region.
    */
-  uint32_t rkey();
+  uint32_t rkey() const;
 
   /**
    * @brief Deserialize a remote memory region handle.
