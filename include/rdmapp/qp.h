@@ -48,7 +48,6 @@ struct deserialized_qp {
  *
  */
 class qp : public noncopyable {
-  using callback_ptr = std::function<void(struct ibv_wc const &)> *;
   static std::atomic<uint32_t> next_sq_psn;
   struct ibv_qp *qp_;
   struct ibv_srq *raw_srq_;
@@ -79,6 +78,8 @@ class qp : public noncopyable {
 
 public:
   class send_awaitable {
+    struct ibv_wc wc_;
+    void *coroutine_addr_;
     qp *qp_;
     void *local_addr_;
     size_t local_length_;
@@ -90,7 +91,6 @@ public:
     uint64_t compare_add_;
     uint64_t swap_;
     uint32_t imm_;
-    struct ibv_wc wc_;
     const enum ibv_wr_opcode opcode_;
 
   public:
@@ -126,12 +126,13 @@ public:
   };
 
   class recv_awaitable {
+    struct ibv_wc wc_;
+    void *coroutine_addr_;
     qp *qp_;
     void *local_addr_;
     size_t local_length_;
     uint32_t lkey_;
     std::exception_ptr exception_;
-    struct ibv_wc wc_;
     enum ibv_wr_opcode opcode_;
 
   public:

@@ -190,8 +190,9 @@ void qp::post_recv_srq(struct ibv_recv_wr const &recv_wr,
 
 qp::send_awaitable::send_awaitable(qp *qp, local_mr *local_mr,
                                    enum ibv_wr_opcode opcode)
-    : qp_(qp), local_addr_(local_mr->addr()), local_length_(local_mr->length()),
-      lkey_(local_mr->lkey()), wc_(), opcode_(opcode) {}
+    : wc_(), qp_(qp), local_addr_(local_mr->addr()),
+      local_length_(local_mr->length()), lkey_(local_mr->lkey()),
+      opcode_(opcode) {}
 qp::send_awaitable::send_awaitable(qp *qp, local_mr *local_mr,
                                    enum ibv_wr_opcode opcode,
                                    remote_mr const &remote_mr)
@@ -225,43 +226,43 @@ qp::send_awaitable::send_awaitable(qp *qp, local_mr *local_mr,
 qp::send_awaitable::send_awaitable(qp *qp, void *local_addr,
                                    size_t local_length, uint32_t lkey,
                                    enum ibv_wr_opcode opcode)
-    : qp_(qp), local_addr_(local_addr), local_length_(local_length),
-      lkey_(lkey), wc_(), opcode_(opcode) {}
+    : wc_(), qp_(qp), local_addr_(local_addr), local_length_(local_length),
+      lkey_(lkey), opcode_(opcode) {}
 
 qp::send_awaitable::send_awaitable(qp *qp, void *local_addr,
                                    size_t local_length, uint32_t lkey,
                                    enum ibv_wr_opcode opcode, void *remote_addr,
                                    size_t remote_length, uint32_t rkey)
-    : qp_(qp), local_addr_(local_addr), local_length_(local_length),
+    : wc_(), qp_(qp), local_addr_(local_addr), local_length_(local_length),
       lkey_(lkey), remote_addr_(remote_addr), remote_length_(remote_length),
-      rkey_(rkey), wc_(), opcode_(opcode) {}
+      rkey_(rkey), opcode_(opcode) {}
 
 qp::send_awaitable::send_awaitable(qp *qp, void *local_addr,
                                    size_t local_length, uint32_t lkey,
                                    enum ibv_wr_opcode opcode, void *remote_addr,
                                    size_t remote_length, uint32_t rkey,
                                    uint32_t imm)
-    : qp_(qp), local_addr_(local_addr), local_length_(local_length),
+    : wc_(), qp_(qp), local_addr_(local_addr), local_length_(local_length),
       lkey_(lkey), remote_addr_(remote_addr), remote_length_(remote_length),
-      rkey_(rkey), imm_(imm), wc_(), opcode_(opcode) {}
+      rkey_(rkey), imm_(imm), opcode_(opcode) {}
 
 qp::send_awaitable::send_awaitable(qp *qp, void *local_addr,
                                    size_t local_length, uint32_t lkey,
                                    enum ibv_wr_opcode opcode, void *remote_addr,
                                    size_t remote_length, uint32_t rkey,
                                    uint64_t add)
-    : qp_(qp), local_addr_(local_addr), local_length_(local_length),
+    : wc_(), qp_(qp), local_addr_(local_addr), local_length_(local_length),
       lkey_(lkey), remote_addr_(remote_addr), remote_length_(remote_length),
-      rkey_(rkey), compare_add_(add), wc_(), opcode_(opcode) {}
+      rkey_(rkey), compare_add_(add), opcode_(opcode) {}
 
 qp::send_awaitable::send_awaitable(qp *qp, void *local_addr,
                                    size_t local_length, uint32_t lkey,
                                    enum ibv_wr_opcode opcode, void *remote_addr,
                                    size_t remote_length, uint32_t rkey,
                                    uint64_t compare, uint64_t swap)
-    : qp_(qp), local_addr_(local_addr), local_length_(local_length),
+    : wc_(), qp_(qp), local_addr_(local_addr), local_length_(local_length),
       lkey_(lkey), remote_addr_(remote_addr), remote_length_(remote_length),
-      rkey_(rkey), compare_add_(compare), swap_(swap), wc_(), opcode_(opcode) {}
+      rkey_(rkey), compare_add_(compare), swap_(swap), opcode_(opcode) {}
 
 static inline struct ibv_sge fill_local_sge(void *addr, size_t length,
                                             uint32_t lkey) {
@@ -274,12 +275,7 @@ static inline struct ibv_sge fill_local_sge(void *addr, size_t length,
 
 bool qp::send_awaitable::await_ready() const noexcept { return false; }
 bool qp::send_awaitable::await_suspend(std::coroutine_handle<> h) noexcept {
-  auto callback = new std::function<void(struct ibv_wc const &)>(
-      [h, this](struct ibv_wc const &wc) {
-        wc_ = wc;
-        h.resume();
-      });
-
+  coroutine_addr_ = h.address();
   auto send_sge = fill_local_sge(local_addr_, local_length_, lkey_);
 
   struct ibv_send_wr send_wr = {};
@@ -287,7 +283,7 @@ bool qp::send_awaitable::await_suspend(std::coroutine_handle<> h) noexcept {
   send_wr.opcode = opcode_;
   send_wr.next = nullptr;
   send_wr.num_sge = 1;
-  send_wr.wr_id = reinterpret_cast<uint64_t>(callback);
+  send_wr.wr_id = reinterpret_cast<uint64_t>(this);
   send_wr.send_flags = IBV_SEND_SIGNALED;
   send_wr.sg_list = &send_sge;
   if (is_rdma()) {
@@ -311,7 +307,6 @@ bool qp::send_awaitable::await_suspend(std::coroutine_handle<> h) noexcept {
     qp_->post_send(send_wr, bad_send_wr);
   } catch (std::runtime_error &e) {
     exception_ = std::make_exception_ptr(e);
-    delete callback;
     return false;
   }
   return true;
@@ -418,36 +413,30 @@ qp::send_awaitable qp::compare_and_swap(void *remote_addr, size_t remote_length,
 }
 
 qp::recv_awaitable::recv_awaitable(qp *qp, local_mr *local_mr)
-    : qp_(qp), local_addr_(local_mr->addr()), local_length_(local_mr->length()),
-      lkey_(local_mr->lkey()), wc_() {}
+    : wc_(), qp_(qp), local_addr_(local_mr->addr()),
+      local_length_(local_mr->length()), lkey_(local_mr->lkey()) {}
 
 qp::recv_awaitable::recv_awaitable(qp *qp, void *local_addr,
                                    size_t local_length, uint32_t lkey)
-    : qp_(qp), local_addr_(local_addr), local_length_(local_length),
-      lkey_(lkey), wc_() {}
+    : wc_(), qp_(qp), local_addr_(local_addr), local_length_(local_length),
+      lkey_(lkey) {}
 
 bool qp::recv_awaitable::await_ready() const noexcept { return false; }
 bool qp::recv_awaitable::await_suspend(std::coroutine_handle<> h) noexcept {
-  auto callback = new std::function<void(struct ibv_wc const &)>(
-      [h, this](struct ibv_wc const &wc) {
-        wc_ = wc;
-        h.resume();
-      });
-
+  coroutine_addr_ = h.address();
   auto recv_sge = fill_local_sge(local_addr_, local_length_, lkey_);
 
   struct ibv_recv_wr recv_wr = {};
   struct ibv_recv_wr *bad_recv_wr = nullptr;
   recv_wr.next = nullptr;
   recv_wr.num_sge = 1;
-  recv_wr.wr_id = reinterpret_cast<uint64_t>(callback);
+  recv_wr.wr_id = reinterpret_cast<uint64_t>(this);
   recv_wr.sg_list = &recv_sge;
 
   try {
     qp_->post_recv(recv_wr, bad_recv_wr);
   } catch (std::runtime_error &e) {
     exception_ = std::make_exception_ptr(e);
-    delete callback;
     return false;
   }
   return true;

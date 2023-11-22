@@ -19,6 +19,7 @@ set(RDMAPP_SOURCE_FILES
   src/qp.cc
   src/srq.cc
   src/mr.cc
+  src/executor.cc
 )
 
 set(RDMAPP_LINK_LIBRARIES ibverbs Threads::Threads)
