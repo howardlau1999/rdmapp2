@@ -28,8 +28,6 @@ add_library(rdmapp STATIC ${RDMAPP_SOURCE_FILES})
 
 list(APPEND
   RDMAPP_COMPILE_OPTIONS
-  PUBLIC
-  -flto
   PRIVATE
   -fno-rtti
   -Wall 
@@ -39,8 +37,6 @@ list(APPEND
 )
 list(APPEND
   RDMAPP_LINK_OPTIONS
-  PUBLIC
-  -flto
   PRIVATE
   -fno-rtti
 )
