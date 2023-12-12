@@ -19,8 +19,7 @@ class device_list : public noncopyable {
   size_t nr_devices_;
 
 public:
-  class iterator
-      : public std::iterator<std::forward_iterator_tag, struct ibv_device *> {
+  class iterator {
     friend class device_list;
     size_t i_;
     struct ibv_device **devices_;
@@ -32,6 +31,11 @@ public:
     bool operator!=(device_list::iterator const &other) const;
     device_list::iterator &operator++();
     device_list::iterator &operator++(int);
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = struct ibv_device;
+    using difference_type = int;
+    using pointer = struct ibv_device *;
+    using reference = struct ibv_device &;
   };
   device_list();
   size_t size();
